@@ -1,0 +1,14 @@
+{
+    "name": "Americano",
+    "alias": "americano",
+    "description": "",
+    "keywords": [],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\Americano\\Providers\\AmericanoServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}
