@@ -55,47 +55,30 @@ class UserController extends Controller
     public function insertReportImage(Request $request)
     {
         $value = $request->all();
-        $id = $value['report_id'];
-        \Log::info($id);
-        
-        $size = sizeof($value);
         $temp = '';
-        for($i=0; $i<$size; $i++){
-            $png_url = "profile-" . time() . ".jpg";
-            $path = public_path() . '/uploads/' . $png_url;
-            $img = $request->photo;
-            $img = substr($img, strpos($img, ",") + 1);
-            $data = base64_decode($img);
-            $success = file_put_contents($path, $data);
-            $value[$i]['photo'] = $png_url;
-            $value[$i]['report_id'] = $id;
-           
-            $temp= Wsphoto::create($value[$i]);
-        }
+        $png_url = "profile-" . time() . ".jpg";
+        $path = public_path() . '/uploads/' . $png_url;
+        $img = $value['photo'] ;
+        $img = substr($img, strpos($img, ",") + 1);
+        $data = base64_decode($img);
+        $success = file_put_contents($path, $data);
+        $value['photo'] = $png_url;
+        $temp= Wsphoto::create($value);
         // $temp= Wsphoto::create($value);
         return $temp;
     }
     public function insertflloupImage(Request $request)
     {
         $value = $request->all();
-        $id = $value['follow_id'];
-        \Log::info($id);
-        
-        $size = sizeof($value);
         $temp = '';
-        for($i=0; $i<$size; $i++){
-            $png_url = "profile-" . time() . ".jpg";
-            $path = public_path() . '/uploads/' . $png_url;
-            $img = $request->photo;
-            $img = substr($img, strpos($img, ",") + 1);
-            $data = base64_decode($img);
-            $success = file_put_contents($path, $data);
-            $value[$i]['photo'] = $png_url;
-            $value[$i]['follow_id'] = $id;
-           
-            $temp= followImage::create($value[$i]);
-        }
-        // $temp= Wsphoto::create($value);
+        $png_url = "profile-" . time() . ".jpg";
+        $path = public_path() . '/uploads/' . $png_url;
+        $img = $value['photo'];
+        $img = substr($img, strpos($img, ",") + 1);
+        $data = base64_decode($img);
+        $success = file_put_contents($path, $data);
+        $value['photo'] = $png_url;
+        $temp= followImage::create($value);
         return $temp;
     }
  
