@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:crime_report/main.dart';
 import 'package:crime_report/pages/login_reg.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +12,7 @@ import 'package:crime_report/pages/terms_con.dart';
 import 'package:crime_report/pages/notify_page.dart';
 import 'package:crime_report/pages/progress.dart';
 import 'package:crime_report/pages/report_page.dart';
+import 'package:crime_report/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class RepCatPage extends StatefulWidget {
@@ -41,6 +44,32 @@ class _RepCatPageState extends State<RepCatPage> {
                   ),
                 ],
               ),
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
+                "Home",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MainPage()),
+                );
+              },
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
+                "Start Reporting",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RepCatPage()),
+                );
+              },
               //trailing: Icon(Icons.arrow_forward),
             ),
             ListTile(
@@ -104,14 +133,8 @@ class _RepCatPageState extends State<RepCatPage> {
             ),
             ListTile(
               title: GestureDetector(
-                onTap: () async {
-                  SharedPreferences localStorage =
-                      await SharedPreferences.getInstance();
-                  localStorage.remove('user');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LogRegPage()),
-                  );
+                onTap: () {
+                  logoutAlert("Do you want to logout?");
                 },
                 child: Text(
                   "Log Out",
@@ -498,13 +521,18 @@ class _RepCatPageState extends State<RepCatPage> {
                     borderRadius: BorderRadius.circular(0),
                     color: Colors.grey,
                   ),
-                  child: Center(
-                    child: Text("EXIT",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20.6,
-                          //fontWeight: FontWeight.bold
-                        )),
+                  child: GestureDetector(
+                    onTap: () {
+                      exit(0);
+                    },
+                    child: Center(
+                      child: Text("EXIT",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20.6,
+                            //fontWeight: FontWeight.bold
+                          )),
+                    ),
                   ),
                 ),
               ),
@@ -549,5 +577,64 @@ class _RepCatPageState extends State<RepCatPage> {
     // );
     prob = '4';
     Navigator.push(context, SlideLeftRoute(page: ReportScreen()));
+  }
+
+  void logoutAlert(String msg) {
+    showDialog<String>(
+      context: context,
+      barrierDismissible:
+          false, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return Theme(
+          data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.white),
+          child: AlertDialog(
+            title: new Text(
+              "Logout",
+              style: TextStyle(color: Colors.black),
+            ),
+            content: new Text(
+              msg,
+              style: TextStyle(color: Colors.black),
+            ),
+            actions: <Widget>[
+              Row(
+                children: <Widget>[
+                  new FlatButton(
+                    child: new Text(
+                      "Yes",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      logoutConfirm();
+                    },
+                  ),
+                  new FlatButton(
+                    child: new Text(
+                      "No",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void logoutConfirm() async {
+    Navigator.of(context).pop();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    localStorage.remove('user');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LogRegPage()),
+    );
   }
 }

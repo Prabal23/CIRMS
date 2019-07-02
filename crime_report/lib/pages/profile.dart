@@ -21,6 +21,7 @@ import 'package:crime_report/pages/terms_con.dart';
 import 'package:crime_report/pages/notify_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:crime_report/pages/main_page.dart';
 
 class ProfilePage extends StatefulWidget {
   @override
@@ -47,7 +48,11 @@ class _ProfilePageState extends State<ProfilePage> {
       type = '',
       date = '',
       uid = '',
-      proImage = '', m = '', d = '';
+      proImage = '',
+      m = '',
+      d = '',
+      image = '',
+      pImg = '';
   File fileImage;
   bool isEditLoading = false;
   List _day = [
@@ -121,6 +126,7 @@ class _ProfilePageState extends State<ProfilePage> {
       fileImage = profileImage;
       isPicked = true;
       isImage = false;
+      pImg = '';
     });
   }
 
@@ -130,6 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
       fileImage = profileImage;
       isPicked = true;
       isImage = false;
+      pImg = '';
     });
   }
 
@@ -142,6 +149,9 @@ class _ProfilePageState extends State<ProfilePage> {
           //Fluttertoast.showToast(msg: 'Male',toastLength: Toast.LENGTH_SHORT);
           break;
         case 'male':
+          //Fluttertoast.showToast(msg: 'Female',toastLength: Toast.LENGTH_SHORT);
+          break;
+        case 'Non_binary':
           //Fluttertoast.showToast(msg: 'Female',toastLength: Toast.LENGTH_SHORT);
           break;
       }
@@ -163,7 +173,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _radioGender = '${userData['gender']}';
     date = '${userData['dob']}';
     _textYearController.text = date.substring(0, 4);
-    year  = _textYearController.text;
+    year = _textYearController.text;
     m = date.substring(5, 7);
     d = date.substring(8);
     // date.split("-");
@@ -186,7 +196,7 @@ class _ProfilePageState extends State<ProfilePage> {
     proImage = await CallApi().getURL();
     isPicked = false;
     isImage = true;
-    
+
     print(proImage + '${userData['image']}');
     for (int i = 0; i < _user_type.length; i++) {
       if (type == _user_type[i]) {
@@ -194,6 +204,10 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     }
     //print("ID's : userData['id']");
+
+    SharedPreferences localStorage1 = await SharedPreferences.getInstance();
+    pImg = localStorage1.getString('pro_image');
+    print("Images : " + image);
   }
 
   @override
@@ -274,6 +288,32 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ListTile(
               title: Text(
+                "Home",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MainPage()),
+                );
+              },
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
+                "Start Reporting",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RepCatPage()),
+                );
+              },
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
                 "Profile",
                 style: TextStyle(color: Colors.white, fontSize: 22),
               ),
@@ -333,14 +373,8 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             ListTile(
               title: GestureDetector(
-                onTap: () async {
-                  SharedPreferences localStorage =
-                      await SharedPreferences.getInstance();
-                  localStorage.remove('user');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LogRegPage()),
-                  );
+                onTap: () {
+                  logoutAlert("Do you want to logout?");
                 },
                 child: Text(
                   "Log Out",
@@ -601,74 +635,78 @@ class _ProfilePageState extends State<ProfilePage> {
                           width: MediaQuery.of(context).size.width,
                           margin: EdgeInsets.only(left: 20, right: 20),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            //crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: <Widget>[
-                              Container(
-                                //color: Colors.white,
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    bottom: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    right: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    left: BorderSide(
-                                        width: 1.0, color: Colors.black26),
+                              Expanded(
+                                child: Container(
+                                  //color: Colors.white,
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      bottom: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      right: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      left: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                    ),
+                                    borderRadius: BorderRadius.circular(5),
+                                    color: Colors.white,
                                   ),
-                                  borderRadius: BorderRadius.circular(5),
-                                  color: Colors.white,
-                                ),
-                                width: 155,
-                                child: TextField(
-                                  autofocus: false,
-                                  controller: _textrNameController,
-                                  decoration: InputDecoration(
-                                    hintText: "First name",
-                                    border: InputBorder.none,
-                                    //border: OutlineInputBorder(borderRadius: BorderRadius.circular(5), borderSide: BorderSide(color: Colors.grey, width: 10.0)),
-                                    contentPadding: EdgeInsets.fromLTRB(
-                                        10.0, 10.0, 20.0, 10.0),
+                                  //width: 155,
+                                  child: TextField(
+                                    autofocus: false,
+                                    controller: _textrNameController,
+                                    decoration: InputDecoration(
+                                      hintText: "First name",
+                                      border: InputBorder.none,
+                                      //border: OutlineInputBorder(borderRadius: BorderRadius.circular(5), borderSide: BorderSide(color: Colors.grey, width: 10.0)),
+                                      contentPadding: EdgeInsets.fromLTRB(
+                                          10.0, 10.0, 20.0, 10.0),
+                                    ),
+                                    onChanged: (value) {
+                                      rName = value;
+                                    },
                                   ),
-                                  onChanged: (value) {
-                                    rName = value;
-                                  },
                                 ),
                               ),
                               SizedBox(
                                 width: 10,
                               ),
-                              Container(
-                                //color: Colors.white,
-                                width: 155,
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    bottom: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    right: BorderSide(
-                                        width: 1.0, color: Colors.black26),
-                                    left: BorderSide(
-                                        width: 1.0, color: Colors.black26),
+                              Expanded(
+                                child: Container(
+                                  //color: Colors.white,
+                                  //width: 155,
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      bottom: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      right: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                      left: BorderSide(
+                                          width: 1.0, color: Colors.black26),
+                                    ),
+                                    borderRadius: BorderRadius.circular(5),
+                                    color: Colors.white,
                                   ),
-                                  borderRadius: BorderRadius.circular(5),
-                                  color: Colors.white,
-                                ),
-                                child: TextField(
-                                  autofocus: false,
-                                  controller: _textrSurController,
-                                  decoration: InputDecoration(
-                                    hintText: "Surname",
-                                    border: InputBorder.none,
-                                    //border: OutlineInputBorder(borderRadius: BorderRadius.circular(5), borderSide: BorderSide(color: Colors.grey, width: 10.0)),
-                                    contentPadding: EdgeInsets.fromLTRB(
-                                        10.0, 10.0, 20.0, 10.0),
+                                  child: TextField(
+                                    autofocus: false,
+                                    controller: _textrSurController,
+                                    decoration: InputDecoration(
+                                      hintText: "Surname",
+                                      border: InputBorder.none,
+                                      //border: OutlineInputBorder(borderRadius: BorderRadius.circular(5), borderSide: BorderSide(color: Colors.grey, width: 10.0)),
+                                      contentPadding: EdgeInsets.fromLTRB(
+                                          10.0, 10.0, 20.0, 10.0),
+                                    ),
+                                    onChanged: (value) {
+                                      rSurname = value;
+                                    },
                                   ),
-                                  onChanged: (value) {
-                                    rSurname = value;
-                                  },
                                 ),
                               ),
                             ],
@@ -1158,21 +1196,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 height: 20,
                               ),
                               Container(
-                                width: 150,
-                                child: Column(
-                                  children: <Widget>[
-                                    RaisedButton(
-                                      color: mainheader,
-                                      child: Text(
-                                        isEditLoading ? "SENDING..." : "SEND",
-                                        style: TextStyle(
-                                            fontSize: 20, color: Colors.white),
-                                      ),
-                                      onPressed: () {
-                                        isEditLoading ? null : handleSubmit();
-                                      },
-                                    ),
-                                  ],
+                                width: 200,
+                                margin: EdgeInsets.only(left: 20),
+                                child: RaisedButton(
+                                  color:
+                                      isEditLoading ? Colors.grey : mainheader,
+                                  child: Text(
+                                    isEditLoading ? "UPDATING..." : "UPDATE",
+                                    style: TextStyle(
+                                        fontSize: 20, color: Colors.white),
+                                  ),
+                                  onPressed: () {
+                                    isEditLoading ? null : handleSubmit();
+                                  },
                                 ),
                               ),
                               SizedBox(
@@ -1215,36 +1251,46 @@ class _ProfilePageState extends State<ProfilePage> {
     String g = _radioGender;
     String t = type;
 
-    List<int> imageBytes = fileImage.readAsBytesSync();
-    String image = base64.encode(imageBytes);
-    image = 'data:image/png;base64,' + image;
+    if (pImg == '') {
+      List<int> imageBytes = fileImage.readAsBytesSync();
+      image = base64.encode(imageBytes);
+      image = 'data:image/png;base64,' + image;
+    } else {
+      image = pImg;
+    }
+
+    // List<int> imageBytes = fileImage.readAsBytesSync();
+    // image = base64.encode(imageBytes);
+    // image = 'data:image/png;base64,' + image;
+    SharedPreferences localStorages = await SharedPreferences.getInstance();
+    localStorages.setString('pro_image', image);
     //String image = base64Encode(fileImage.readAsBytesSync());
     //print(image);
 
     if (image == '') {
-      verificationAlert("Photo not selected. Please select a photo.");
-    }else if (n == '') {
-      verificationAlert("First Name field is blank");
+      verificationAlert("Photo not selected. Please select a photo.", 1);
+    } else if (n == '') {
+      verificationAlert("First Name field is blank", 1);
     } else if (s == '') {
-      verificationAlert("Surname field is blank");
+      verificationAlert("Surname field is blank", 1);
     } else if (e == '') {
-      verificationAlert("Email field is blank");
+      verificationAlert("Email field is blank", 1);
     } else if (p == '') {
-      verificationAlert("Password field is blank");
+      verificationAlert("Password field is blank", 1);
     } else if (cp == '') {
-      verificationAlert("Confirm Password field is blank");
+      verificationAlert("Confirm Password field is blank", 1);
     } else if (cp != p) {
-      verificationAlert("Password doesn't match");
+      verificationAlert("Password doesn't match", 1);
     } else if (dd == '') {
-      verificationAlert("Day not chosen");
+      verificationAlert("Day not chosen", 1);
     } else if (mm == '') {
-      verificationAlert("Month not chosen");
+      verificationAlert("Month not chosen", 1);
     } else if (yy == '') {
-      verificationAlert("Year field is blank");
+      verificationAlert("Year field is blank", 1);
     } else if (g == '') {
-      verificationAlert("Gender not chosen");
+      verificationAlert("Gender not chosen", 1);
     } else if (t == '') {
-      verificationAlert("Type not chosen");
+      verificationAlert("Type not chosen", 1);
     } else {
       setState(() {
         isEditLoading = true;
@@ -1268,10 +1314,14 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         isEditLoading = false;
       });
+
+      verificationAlert(
+          "Your profile has been updated. Please login again to see the changes.",
+          2);
     }
   }
 
-  void verificationAlert(String msg) {
+  void verificationAlert(String msg, int numbers) {
     showDialog<String>(
       context: context,
       barrierDismissible:
@@ -1281,7 +1331,7 @@ class _ProfilePageState extends State<ProfilePage> {
           data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.black),
           child: AlertDialog(
             title: new Text(
-              "Alert",
+              numbers == 2 ? "Success!" : "Alert",
               style: TextStyle(color: Colors.white),
             ),
             content: new Text(
@@ -1296,13 +1346,80 @@ class _ProfilePageState extends State<ProfilePage> {
                       TextStyle(color: Theme.of(context).secondaryHeaderColor),
                 ),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  if (numbers == 2) {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => MainPage()),
+                    );
+                  } else {
+                    Navigator.of(context).pop();
+                  }
                 },
               )
             ],
           ),
         );
       },
+    );
+  }
+
+  void logoutAlert(String msg) {
+    showDialog<String>(
+      context: context,
+      barrierDismissible:
+          false, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return Theme(
+          data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.white),
+          child: AlertDialog(
+            title: new Text(
+              "Logout",
+              style: TextStyle(color: Colors.black),
+            ),
+            content: new Text(
+              msg,
+              style: TextStyle(color: Colors.black),
+            ),
+            actions: <Widget>[
+              Row(
+                children: <Widget>[
+                  new FlatButton(
+                    child: new Text(
+                      "Yes",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      logoutConfirm();
+                    },
+                  ),
+                  new FlatButton(
+                    child: new Text(
+                      "No",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void logoutConfirm() async {
+    Navigator.of(context).pop();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    localStorage.remove('user');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LogRegPage()),
     );
   }
 }

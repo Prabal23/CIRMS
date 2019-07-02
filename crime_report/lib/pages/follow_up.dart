@@ -5,10 +5,11 @@ import 'package:crime_report/api/api.dart';
 import 'package:crime_report/main.dart';
 import 'package:crime_report/pages/login_reg.dart';
 import 'package:flutter/material.dart';
-
+import 'package:flutter/services.dart';
 import 'package:flutter_redux/flutter_redux.dart';
 import 'package:intl/intl.dart';
 import 'package:redux/redux.dart';
+import 'package:crime_report/json_serialize/photo.dart';
 import 'package:crime_report/pages/rep_cat.dart';
 import 'package:crime_report/pages/profile.dart';
 import 'package:crime_report/pages/terms_con.dart';
@@ -17,14 +18,21 @@ import 'package:crime_report/pages/progress.dart';
 import 'package:crime_report/pages/main_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:transparent_image/transparent_image.dart';
+import 'package:flutter_multiple_image_picker/flutter_multiple_image_picker.dart';
 
 class FollowUpPage extends StatefulWidget {
   final String prob;
   final int pID;
   final String desc;
+  final String situat;
 
   FollowUpPage(
-      {Key key, @required this.prob, @required this.pID, @required this.desc})
+      {Key key,
+      @required this.prob,
+      @required this.pID,
+      @required this.desc,
+      @required this.situat})
       : super(key: key);
   @override
   _FollowUpPageState createState() => new _FollowUpPageState();
@@ -32,12 +40,18 @@ class FollowUpPage extends StatefulWidget {
 
 class _FollowUpPageState extends State<FollowUpPage> {
   TextEditingController _textController = new TextEditingController();
+  List images, photoIMG;
+  var img = [];
+  int maxImageNo = 5;
+  bool selectSingleImage = false;
   String text = '',
       situation = 'green',
       prob_status = '',
       runningTime = '',
       runningdate = '',
-      photo = '';
+      photo = '',
+      proImage = '',
+      ph = '0';
   bool green = true, yellow = false, orange = false, red = false;
   bool not_fixed = true, adeq_fixed = false;
   var userData;
@@ -46,6 +60,8 @@ class _FollowUpPageState extends State<FollowUpPage> {
   File fileImage;
   bool isImage = false;
   bool isChosen = false;
+  bool isLoading = true;
+  List<Photo> prog = [];
 
   @override
   void initState() {
@@ -53,6 +69,9 @@ class _FollowUpPageState extends State<FollowUpPage> {
     // DateFormat("hh:mm:ss").format(curTime);
     _textController.text = widget.desc;
     _getUserInfo();
+    loadImageList();
+    //prog.length = 0;
+    //photoIMG.length = 0;
     runningTime = _formatDateTime(DateTime.now());
     Timer.periodic(Duration(seconds: 1), (Timer t) => _getTime());
     runningdate = _formatDateTime1(DateTime.now());
@@ -67,7 +86,83 @@ class _FollowUpPageState extends State<FollowUpPage> {
     setState(() {
       userData = user;
     });
+    String sit = widget.situat;
+    if (sit == 'green') {
+      situationChange(true, false, false, false, '1');
+    }
+    if (sit == 'yellow') {
+      situationChange(false, true, false, false, '2');
+    }
+    if (sit == 'orange') {
+      situationChange(false, false, true, false, '3');
+    }
+    if (sit == 'red') {
+      situationChange(false, false, false, true, '4');
+    }
+
+    proImage = await CallApi().getURL();
     //print("ID's : userData['id']");
+  }
+
+  void situationChange(bool gr, bool ye, bool ora, bool re, String sit) {
+    green = gr;
+    yellow = ye;
+    orange = ora;
+    red = re;
+    situation = sit;
+  }
+
+  Future loadImageList() async {
+    //////   for API without json array value  /////////
+    // http.Response response =
+    //     await http.get("http://192.168.0.100:8000/api/getallreport/29");
+
+    await Future.delayed(Duration(seconds: 3));
+
+    /////    for content without json array value   ////////
+    // var data = {
+    //   'id': '${userData['id']}',
+    // };
+    String id = "${userData['id']}";
+    String proid = "${widget.pID}";
+    //print('${widget.pID}');
+    var response = await CallApi().getData('getReportImageById/' + proid);
+    var content = response.body;
+    print("Content : " + content);
+    List collection = json.decode(content);
+
+    List<Photo> _list = collection.map((json) => Photo.fromJson(json)).toList();
+
+    setState(() {
+      prog = _list;
+      isLoading = false;
+      photo = '1';
+    });
+  }
+
+  initMultiPickUp() async {
+    setState(() {
+      images = null;
+      //_platformMessage = 'No Error';
+    });
+    List resultList;
+    //String error;
+    try {
+      resultList = await FlutterMultipleImagePicker.pickMultiImages(
+          maxImageNo, selectSingleImage);
+    } on PlatformException catch (e) {
+      //error = e.message;
+      print(e.message);
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      images = resultList;
+      //isImage = false;
+      photo = '1';
+      //if (error == null) _platformMessage = 'No Error Dectected';
+    });
   }
 
   clickImagefromCamera() async {
@@ -75,7 +170,8 @@ class _FollowUpPageState extends State<FollowUpPage> {
     setState(() {
       fileImage = profileImage;
       isImage = true;
-      isChosen = false;
+      //images = null;
+      //isChosen = false;
       photo = '1';
     });
   }
@@ -134,6 +230,32 @@ class _FollowUpPageState extends State<FollowUpPage> {
                   ),
                 ],
               ),
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
+                "Home",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MainPage()),
+                );
+              },
+              //trailing: Icon(Icons.arrow_forward),
+            ),
+            ListTile(
+              title: Text(
+                "Start Reporting",
+                style: TextStyle(color: Colors.white, fontSize: 22),
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RepCatPage()),
+                );
+              },
               //trailing: Icon(Icons.arrow_forward),
             ),
             ListTile(
@@ -197,14 +319,8 @@ class _FollowUpPageState extends State<FollowUpPage> {
             ),
             ListTile(
               title: GestureDetector(
-                onTap: () async {
-                  SharedPreferences localStorage =
-                      await SharedPreferences.getInstance();
-                  localStorage.remove('user');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LogRegPage()),
-                  );
+                onTap: () {
+                  logoutAlert("Do you want to logout?");
                 },
                 child: Text(
                   "Log Out",
@@ -461,7 +577,7 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         //mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
-                          Text('${userData['first_name']}',
+                          Text('Name : ${userData['first_name']}',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 15)),
                         ],
@@ -473,7 +589,7 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         //mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
-                          Text('${userData['last_name']}',
+                          Text('Surname : ${userData['last_name']}',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 15)),
                         ],
@@ -485,7 +601,7 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         //mainAxisAlignment: MainAxisAlignment.start,
                         children: <Widget>[
-                          Text('${userData['username']}',
+                          Text('Work Code : ${userData['username']}',
                               style:
                                   TextStyle(color: Colors.white, fontSize: 15)),
                         ],
@@ -663,6 +779,104 @@ class _FollowUpPageState extends State<FollowUpPage> {
                       ),
                     ),
                     SizedBox(height: 20),
+                    Container(
+                      margin: EdgeInsets.only(left: 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: <Widget>[
+                          Text(ph + " Image/s (Long Press to delete an image)",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontStyle: FontStyle.italic)),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    prog == null
+                        ? Container()
+                        : Container(
+                            margin: EdgeInsets.only(left: 20, right: 20),
+                            color: Colors.white,
+                            height: 270.0,
+                            width: MediaQuery.of(context).size.width,
+                            child: isLoading
+                                ? Center(
+                                    // child: Text(
+                                    //   "Please wait...\nImages are loading",
+                                    //   textAlign: TextAlign.center,
+                                    // )
+                                    child: CircularProgressIndicator())
+                                : GridView.count(
+                                    primary: true,
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 0.80,
+                                    // mainAxisSpacing: 4,
+                                    // crossAxisSpacing: 4,
+                                    children:
+                                        List.generate(prog.length, (index) {
+                                      Photo photos = prog[index];
+                                      // var images = proImage + '${photos.photo}';
+                                      // List im = new List();
+                                      // im.add('${images[index]}');
+                                      // setState(() {
+                                      //   photoIMG = im;
+                                      // });
+                                      // print(photoIMG);
+                                      //images.add('${photos.photo}');
+                                      ph = '${prog.length}';
+                                      return Container(
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: CircleAvatar(
+                                          radius: 20,
+                                          backgroundColor: subheader,
+                                          child: GestureDetector(
+                                            child: GridTile(
+                                              child: Container(
+                                                padding: EdgeInsets.all(5.0),
+                                                // child: Stack(
+                                                //   children: <Widget>[
+                                                //     Center(
+                                                //         child:
+                                                //             CircularProgressIndicator()),
+                                                //     Center(
+                                                //       child: FadeInImage
+                                                //           .memoryNetwork(
+                                                //         placeholder:
+                                                //             kTransparentImage,
+                                                //         image: proImage +
+                                                //             '${photos.photo}',
+                                                //             fit: BoxFit.cover
+                                                //       ),
+                                                //     ),
+                                                //   ],
+                                                // ),
+                                                decoration: BoxDecoration(
+                                                  color: subheader,
+                                                  shape: BoxShape.circle,
+                                                  image: new DecorationImage(
+                                                    image: new NetworkImage(
+                                                      proImage +
+                                                          '${photos.photo}',
+                                                    ),
+                                                    //fit: BoxFit.cover,
+                                                  )
+                                                ),
+                                              ),
+                                            ),
+                                            onLongPress: () {
+                                              deleteDialog(photos.id);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  )),
+                    //Text(ph),
+                    SizedBox(
+                      height: 10,
+                    ),
                     GestureDetector(
                       onTap: () {
                         clickImagefromCamera();
@@ -698,7 +912,24 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         ),
                       ),
                     ),
-                    (isImage == true && isChosen == false)
+                    Center(
+                      child: (isImage == true)
+                          ? new Container(
+                              margin: EdgeInsets.only(left: 20, right: 20),
+                              color: Colors.white,
+                              height: 150.0,
+                              width: MediaQuery.of(context).size.width,
+                              child: Container(
+                                // color: Colors.white,
+                                padding: EdgeInsets.all(5),
+                                child: fileImage != null
+                                    ? new Image.file(fileImage)
+                                    : null,
+                              ),
+                            )
+                          : new Container(),
+                    ),
+                    (isImage == true)
                         ? SizedBox(
                             height: 10,
                           )
@@ -710,22 +941,23 @@ class _FollowUpPageState extends State<FollowUpPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          (isImage == true && isChosen == false)
+                          (isImage == true)
                               ? Text(
                                   'Photo taken',
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontStyle: FontStyle.italic),
                                 )
-                              : Text(''),
+                              : Container(),
                         ],
                       ),
                     ),
                     SizedBox(height: 10),
                     GestureDetector(
-                      onTap: () {
-                        pickImagefromGallery();
-                      },
+                      // onTap: () {
+                      //   pickImagefromGallery();
+                      // },
+                      onTap: initMultiPickUp,
                       child: Container(
                         color: blackbutton,
                         padding: EdgeInsets.only(
@@ -746,7 +978,52 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         ),
                       ),
                     ),
-                    SizedBox(height: 10),
+                    Center(
+                      child: images == null
+                          ? new Container()
+                          : new Container(
+                              margin: EdgeInsets.only(left: 20, right: 20),
+                              color: Colors.white,
+                              height: 220.0,
+                              width: MediaQuery.of(context).size.width,
+                              // child: new ListView.builder(
+                              //   scrollDirection: Axis.horizontal,
+                              //   itemBuilder: (BuildContext context, int index) =>
+                              //       new Padding(
+                              //         padding: const EdgeInsets.all(5.0),
+                              //         child: new Image.file(
+                              //           new File(images[index].toString()),
+                              //         ),
+                              //       ),
+                              //   itemCount: images.length,
+                              // ),
+                              child: Container(
+                                child: GridView.builder(
+                                  //semanticChildCount: 2,
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: 3),
+                                  //crossAxisCount: 2,
+                                  itemBuilder: (BuildContext context,
+                                          int index) =>
+                                      new Container(
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: new Image.file(
+                                          new File(images[index].toString()),
+                                          height: 20,
+                                          width: 20,
+                                        ),
+                                      ),
+                                  itemCount: images.length,
+                                ),
+                              ),
+                            ),
+                    ),
+                    images == null
+                        ? SizedBox(
+                            height: 0,
+                          )
+                        : SizedBox(height: 10),
                     Container(
                       margin: EdgeInsets.only(left: 20, right: 20),
                       child: Row(
@@ -754,8 +1031,8 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         children: <Widget>[
                           Text(
                               //imgNum == 0 ? "No photos attached or" : "$imgNum" + " photos attached",
-                              (isImage == false && isChosen == true)
-                                  ? "Photo attached"
+                              (images != null)
+                                  ? "${images.length}" + " Photo attached"
                                   : "",
                               style: TextStyle(
                                   color: Colors.white,
@@ -763,13 +1040,14 @@ class _FollowUpPageState extends State<FollowUpPage> {
                         ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 10),
                     Container(
                       margin: EdgeInsets.only(left: 20),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(address, style: TextStyle(color: Colors.white)),
+                          Text("Address : " + address,
+                              style: TextStyle(color: Colors.white)),
                         ],
                       ),
                     ),
@@ -1043,26 +1321,31 @@ class _FollowUpPageState extends State<FollowUpPage> {
                 //   size: 40,
                 // ),
               ),
-              Container(
-                height: 78.25,
-                padding: EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(width: 2.0, color: Colors.black),
-                    bottom: BorderSide(width: 2.0, color: Colors.black),
-                    right: BorderSide(width: 2.0, color: Colors.black),
-                    left: BorderSide(width: 2.0, color: Colors.black),
+              GestureDetector(
+                onTap: () {
+                  exit(0);
+                },
+                child: Container(
+                  height: 78.25,
+                  padding: EdgeInsets.all(15),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(width: 2.0, color: Colors.black),
+                      bottom: BorderSide(width: 2.0, color: Colors.black),
+                      right: BorderSide(width: 2.0, color: Colors.black),
+                      left: BorderSide(width: 2.0, color: Colors.black),
+                    ),
+                    borderRadius: BorderRadius.circular(0),
+                    color: Colors.grey,
                   ),
-                  borderRadius: BorderRadius.circular(0),
-                  color: Colors.grey,
-                ),
-                child: Center(
-                  child: Text("EXIT",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        //fontWeight: FontWeight.bold
-                      )),
+                  child: Center(
+                    child: Text("EXIT",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          //fontWeight: FontWeight.bold
+                        )),
+                  ),
                 ),
               ),
               Expanded(
@@ -1116,9 +1399,11 @@ class _FollowUpPageState extends State<FollowUpPage> {
     String situ = situation;
 
     if (des == '') {
-      verificationAlert("Notes field is blank");
+      verificationAlert("Notes field is blank", 1);
+    } else if (add == '' && locate == '') {
+      verificationAlert("Location is not ON/Detected", 1);
     } else if (photo == '') {
-      verificationAlert("Photos not attached. Please attach photos.");
+      verificationAlert("Photos not attached. Please attach photos.", 1);
     } else {
       setState(() {
         isAddLoading = true;
@@ -1139,11 +1424,52 @@ class _FollowUpPageState extends State<FollowUpPage> {
       var res1 = await CallApi().postData(data, 'followUp');
       var body1 = json.decode(res1.body);
       int rID = body1['id'];
-      sendPhotos(rID);
+
+      //only camera image is available
+      if (isImage == true && images == null && prog == null) {
+        sendCameraImage(rID);
+        nextPageRoute();
+      }
+      //only multi image picker is available
+      if (isImage == false && images != null && prog == null) {
+        sendMultiPhotos(rID);
+        nextPageRoute();
+      }
+      //only old pictures are available
+      if (isImage == false && images == null && prog != null) {
+        sendOldPics(rID);
+        nextPageRoute();
+      }
+      //camera & multi image picker is available
+      if (isImage == true && images != null && prog == null) {
+        sendCameraImage(rID);
+        sendMultiPhotos(rID);
+        nextPageRoute();
+      }
+      //camera & old pictures are available
+      if (isImage == true && images == null && prog != null) {
+        sendCameraImage(rID);
+        sendOldPics(rID);
+        nextPageRoute();
+      }
+      //multi image picker & old pictures are available
+      if (isImage == false && images != null && prog != null) {
+        sendMultiPhotos(rID);
+        sendOldPics(rID);
+        nextPageRoute();
+      }
+      //all 3 image sources are available
+      if (isImage == true && images != null && prog != null) {
+        sendCameraImage(rID);
+        sendMultiPhotos(rID);
+        sendOldPics(rID);
+        nextPageRoute();
+      }
+
       print(body1);
-      setState(() {
-        isAddLoading = false;
-      });
+      // setState(() {
+      //   isAddLoading = false;
+      // });
       // Navigator.push(
       //   context,
       //   MaterialPageRoute(builder: (context) => ProgressPage()),
@@ -1151,7 +1477,24 @@ class _FollowUpPageState extends State<FollowUpPage> {
     }
   }
 
-  void sendPhotos(int id) async {
+  void sendMultiPhotos(int id) async {
+    print('Follow id : ' + '$id');
+    String fID = '$id';
+
+    for (int i = 0; i < images.length; i++) {
+      File file = new File(images[i].toString());
+      List<int> imageBytes = file.readAsBytesSync();
+      String image = base64.encode(imageBytes);
+      image = 'data:image/png;base64,' + image;
+      var data = {'follow_id': fID, 'photo': image};
+      var res1 = await CallApi().postData(data, 'insertflloupImage');
+      var body1 = json.decode(res1.body);
+      print(body1);
+      await Future.delayed(Duration(milliseconds: 10));
+    }
+  }
+
+  void sendCameraImage(int id) async {
     print('Follow id : ' + '$id');
     String fID = '$id';
 
@@ -1162,16 +1505,35 @@ class _FollowUpPageState extends State<FollowUpPage> {
     var res1 = await CallApi().postData(data, 'insertflloupImage');
     var body1 = json.decode(res1.body);
     print(body1);
+    await Future.delayed(Duration(milliseconds: 10));
+  }
+
+  void sendOldPics(int id) async {
+    print('Follow id : ' + '$id');
+    String fID = '$id';
+
+    for (int i = 0; i < prog.length; i++) {
+      String img = proImage + prog[i].photo.toString();
+      // File file = new File(img);
+      // List<int> imageBytes = file.readAsBytesSync();
+      // String image = base64.encode(imageBytes);
+      //image = 'data:image/png;base64,' + image;
+      var data = {'follow_id': fID, 'photo': img};
+      var res1 = await CallApi().postData(data, 'insertflloupImage');
+      var body1 = json.decode(res1.body);
+      print(body1);
+      await Future.delayed(Duration(milliseconds: 10));
+    }
+  }
+
+  void nextPageRoute() {
     setState(() {
       isAddLoading = false;
     });
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ProgressPage()),
-    );
+    verificationAlert("Follow Up Report has been sent to the manager.", 2);
   }
 
-  void verificationAlert(String msg) {
+  void verificationAlert(String msg, int number) {
     showDialog<String>(
       context: context,
       barrierDismissible:
@@ -1181,7 +1543,7 @@ class _FollowUpPageState extends State<FollowUpPage> {
           data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.black),
           child: AlertDialog(
             title: new Text(
-              "Alert",
+              number == 2 ? "Success!" : "Alert",
               style: TextStyle(color: Colors.white),
             ),
             content: new Text(
@@ -1196,7 +1558,15 @@ class _FollowUpPageState extends State<FollowUpPage> {
                       TextStyle(color: Theme.of(context).secondaryHeaderColor),
                 ),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  if (number == 2) {
+                    Navigator.of(context).pop();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProgressPage()),
+                    );
+                  } else {
+                    Navigator.of(context).pop();
+                  }
                 },
               )
             ],
@@ -1204,5 +1574,134 @@ class _FollowUpPageState extends State<FollowUpPage> {
         );
       },
     );
+  }
+
+  void logoutAlert(String msg) {
+    showDialog<String>(
+      context: context,
+      barrierDismissible:
+          false, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return Theme(
+          data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.white),
+          child: AlertDialog(
+            title: new Text(
+              "Logout",
+              style: TextStyle(color: Colors.black),
+            ),
+            content: new Text(
+              msg,
+              style: TextStyle(color: Colors.black),
+            ),
+            actions: <Widget>[
+              Row(
+                children: <Widget>[
+                  new FlatButton(
+                    child: new Text(
+                      "Yes",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      logoutConfirm();
+                    },
+                  ),
+                  new FlatButton(
+                    child: new Text(
+                      "No",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void logoutConfirm() async {
+    Navigator.of(context).pop();
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    localStorage.remove('user');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LogRegPage()),
+    );
+  }
+
+  void deleteDialog(int id) {
+    showDialog<String>(
+      context: context,
+      barrierDismissible:
+          true, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return Theme(
+          data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.black),
+          child: AlertDialog(
+            title: new Text(
+              "Delete",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: new Text(
+              "Do want to delete the photo?",
+              style: TextStyle(color: Colors.white),
+            ),
+            actions: <Widget>[
+              Row(
+                children: <Widget>[
+                  new FlatButton(
+                    child: new Text(
+                      "Yes",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      deleteConfirm(id);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  new FlatButton(
+                    child: new Text(
+                      "No",
+                      style: TextStyle(
+                          color: Theme.of(context).secondaryHeaderColor),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void deleteConfirm(int photo_id) async {
+    setState(() {
+      isLoading = true;
+    });
+    String imgID = '$photo_id';
+
+    var data = {'id': imgID};
+    var res1 = await CallApi().postData(data, 'deleteWsImage');
+    var body1 = json.decode(res1.body);
+    print(body1);
+    int imID = int.parse(ph);
+    int phID = imID - 1;
+    String phtID = '$phID';
+    setState(() {
+      isLoading = false;
+      ph = phtID;
+      loadImageList();
+    });
   }
 }

@@ -7,6 +7,7 @@ import 'package:crime_report/pages/login_reg.dart';
 import 'package:crime_report/pages/routeAnimation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import 'package:onesignal/onesignal.dart';
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -20,22 +21,63 @@ class SplashScreenState extends State<MyHomePage>
   Animation<double> animation;
   AnimationController controller;
   bool _isLoggedIn = false;
+  String _debugLabelString = "";
+  bool _requireConsent = false;
 
-  void _checkIfLoggedIn() async{
-      // check if token is there
-      SharedPreferences localStorage = await SharedPreferences.getInstance();
-      var user = localStorage.getString('user');
-      if(user!= null){
-         setState(() {
-            _isLoggedIn = true;
-         });
-      }
-}
+  void _checkIfLoggedIn() async {
+    // check if token is there
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var user = localStorage.getString('user');
+    if (user != null) {
+      setState(() {
+        _isLoggedIn = true;
+      });
+    }
+  }
 
   @override
   void initState() {
     CircularProgressIndicator();
     _checkIfLoggedIn();
+
+    OneSignal.shared.init("fe0695b7-f1d5-4475-bc53-083517f95589");
+//in case of iOS --- see below
+//OneSignal.shared.init("your_app_id_here", {
+//	OSiOSSettings.autoPrompt: false,
+    // OSiOSSettings.inAppLaunchUrl : true
+//});
+
+    OneSignal.shared
+        .setNotificationReceivedHandler((OSNotification notification) {
+      // will be called whenever a notification is received
+    });
+
+    OneSignal.shared
+        .setNotificationOpenedHandler((OSNotificationOpenedResult result) {
+      // will be called whenever a notification is opened/button pressed.
+    });
+
+    OneSignal.shared.setPermissionObserver((OSPermissionStateChanges changes) {
+      // will be called whenever the permission changes
+      // (ie. user taps Allow on the permission prompt in iOS)
+    });
+
+    OneSignal.shared
+        .setSubscriptionObserver((OSSubscriptionStateChanges changes) {
+      // will be called whenever the subscription changes
+      //(ie. user gets registered with OneSignal and gets a user ID)
+    });
+
+    OneSignal.shared.setEmailSubscriptionObserver(
+        (OSEmailSubscriptionStateChanges emailChanges) {
+      // will be called whenever then user's email subscription changes
+      // (ie. OneSignal.setEmail(email) is called and the user gets registered
+    });
+
+// For each of the above functions, you can also pass in a
+// reference to a function as well:
+
+    //_handleGetPermissionSubscriptionState();
     super.initState();
 
     //loadData();
@@ -56,9 +98,13 @@ class SplashScreenState extends State<MyHomePage>
   }
 
   onDoneLoading() async {
-    _isLoggedIn ? Navigator.pushReplacement(context, SlideLeftRoute(page: MainPage())) :
-    Navigator.pushReplacement(context, SlideLeftRoute(page: LogRegPage()));
+    _isLoggedIn
+        ? Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => MainPage()))
+        : Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => LogRegPage()));
     //Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => LogRegPage()));
+    //_isLoggedIn ? Navigator.of(context).pop() : null;
   }
 
   @override
